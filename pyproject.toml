@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "morgan-solar-drawing-gen"
+version = "1.0.0"
+description = "Modernized EPDM drawing number generator — proof of concept for Morgan Solar"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "Abdallah Safi"}]
+
+dependencies = [
+    "pydantic>=2.0,<3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+drawing-gen = "main:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM", "TCH"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]
