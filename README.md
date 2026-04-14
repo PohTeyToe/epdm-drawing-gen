@@ -1,8 +1,70 @@
 # EPDM Drawing Number Generator — Modern Python Backend Modernization Demo
 
-Demonstrates transforming a legacy engineering script into a production-ready Python module with type safety, validation, async support, and comprehensive testing.
+Demonstrates transforming a legacy engineering script into a production-ready Python module with type safety, validation, async support, and comprehensive testing. Ships with a FastAPI wrapper and a React web UI so reviewers can exercise the system without installing Python.
 
-## Before vs After
+## Web UI
+
+A React + FastAPI front-end sits on top of the core package. Engineering reviewers can browse, filter, and generate drawing numbers from the browser.
+
+### Run locally
+
+```bash
+# Terminal 1 — backend (FastAPI on 8003)
+pip install -r api/requirements.txt
+uvicorn api.main:app --port 8003 --reload
+
+# Terminal 2 — frontend (Vite on 5183)
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:5183. The frontend proxies `/api/*` to `http://localhost:8003` during dev.
+
+### Stack
+
+| Layer | Tech |
+|-|-|
+| Backend | FastAPI, Pydantic v2, uvicorn |
+| Frontend | React 19, TypeScript, Vite, Tailwind v4, Framer Motion, @tanstack/react-table, lucide-react, react-hot-toast |
+| Port | Backend `8003`, Frontend `5183` |
+
+### Endpoints
+
+| Method | Path | Purpose |
+|-|-|-|
+| GET | `/drawings` | Paginated list with `page`, `size`, `sort_by`, `descending`, `discipline`, `search` query params |
+| GET | `/drawings/{id}` | Single drawing detail |
+| POST | `/drawings/generate` | Generate a new drawing number |
+| GET | `/disciplines` | Available engineering disciplines |
+| GET | `/drawing-types` | Available drawing type options |
+| GET | `/health` | Liveness check |
+
+### Frontend features
+
+- Hero header with grid-paper background and solar accent
+- Sortable, filterable drawings table with discipline badges and monospace IDs
+- Search + discipline dropdown + "Generate New" action
+- Quick-generate modal, revision picker, type dropdown, toast on success
+- Slide-in drawing detail drawer with SVG preview and bottom-right stamp box
+- Graceful empty state when the API is unreachable
+
+### Production build
+
+```bash
+cd frontend
+npm run build        # outputs to frontend/dist
+```
+
+Set `VITE_API_URL` at build time to point the deployed frontend at a non-localhost backend. Leave it unset to use the dev proxy.
+
+---
+
+## CLI (original)
+
+The original CLI remains intact for batch work and scripting.
+
+### Before vs After
 
 The `legacy_example.py` file captures the "before" state: a single-file script relying on global mutable counters, raw string concatenation, no type hints, no input validation, no error handling, and zero testability. Running it with an invalid discipline silently returns `None`. Revising past revision Z produces garbage. There is no way to test any of it without importing and mutating module-level state.
 
@@ -18,7 +80,7 @@ The modernized `drawing_generator/` package replaces all of that with encapsulat
 | No configuration | YAML/env-based config with layered overrides |
 | Synchronous only | Async-ready with `asyncio.Lock` for concurrency |
 
-## Features
+### Features
 
 - **Pydantic v2 models** — `DrawingNumber`, `DrawingConfig`, and `GenerationResult` with field validators, model validators, and strict constraints
 - **Async support** — `async_generate()` and `async_generate_batch()` use `asyncio.Lock` for safe concurrent access, ready for real EPDM vault API integration
@@ -27,14 +89,14 @@ The modernized `drawing_generator/` package replaces all of that with encapsulat
 - **CLI interface** — `generate`, `revise`, and `parse` subcommands via `argparse`
 - **Layered configuration** — explicit overrides > environment variables > YAML file > defaults
 
-## Tech Stack
+### Tech Stack
 
 - Python 3.11+
 - Pydantic v2
 - pytest + pytest-asyncio
 - asyncio
 
-## Quick Start
+### Quick Start
 
 ```bash
 # Install dependencies
@@ -56,7 +118,7 @@ python main.py revise --drawing MS-E-0001-A --project MS
 python -m pytest tests/ -v
 ```
 
-## Test Results
+### Test Results
 
 **42/42 tests passing** across 10 test classes:
 
@@ -73,7 +135,7 @@ python -m pytest tests/ -v
 | Config loading | 2 | Env var override, explicit override precedence |
 | Lookup | 2 | Registry hit + miss |
 
-## Drawing Number Format
+### Drawing Number Format
 
 ```
 {PREFIX}-{DISCIPLINE}-{SEQ:04d}-{REV}
@@ -86,25 +148,37 @@ python -m pytest tests/ -v
 
 Examples: `MS-E-0001-A`, `MS-O-0042-B`
 
-## Project Structure
+### Project Structure
 
 ```
 morgan-solar-drawing-gen/
+├── api/                     # FastAPI web wrapper
+│   ├── main.py              # App factory + CORS
+│   ├── routes.py            # REST endpoints
+│   ├── storage.py           # In-memory store seeded with fixtures
+│   └── requirements.txt     # Web-only deps
+├── frontend/                # React + Vite + Tailwind v4 UI
+│   ├── src/
+│   │   ├── components/      # Header, TopBar, DrawingsTable, GenerateModal, DrawingDrawer, EmptyState
+│   │   ├── lib/             # api.ts, types.ts
+│   │   ├── App.tsx
+│   │   └── main.tsx
+│   └── vite.config.ts
 ├── drawing_generator/
 │   ├── __init__.py          # Public API exports
-│   ├── config.py            # Layered configuration loading (YAML / env / overrides)
+│   ├── config.py            # Layered configuration loading
 │   ├── generator.py         # Core generation engine + custom exceptions
-│   └── models.py            # Pydantic v2 models (DrawingNumber, DrawingConfig, GenerationResult)
+│   └── models.py            # Pydantic v2 models
 ├── tests/
 │   ├── __init__.py
 │   └── test_generator.py    # 42-case pytest suite
-├── legacy_example.py        # The "before" — messy legacy script
-├── main.py                  # CLI entry point (generate / revise / parse)
-├── pyproject.toml           # Modern Python packaging + tool config
+├── legacy_example.py        # The "before"
+├── main.py                  # CLI entry point
+├── pyproject.toml
 └── README.md
 ```
 
-## Configuration
+### Configuration
 
 Configuration loads with the following priority (highest wins):
 
